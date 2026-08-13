@@ -15,7 +15,7 @@ static_gtfs_tables = None
 
 
 def load_static_gtfs():
-    """Download and read the MTA station and schedule files."""
+# Download and read the MTA station and schedule files
 
     global static_gtfs_tables
 
@@ -51,7 +51,7 @@ def load_static_gtfs():
 
 
 def get_stations_for_line(selected_line):
-    """Return all stations served by the selected subway line."""
+# Return all stations served by the selected subway line
 
     if selected_line not in LINE_OPTIONS:
         return []
@@ -91,7 +91,7 @@ def get_stations_for_line(selected_line):
 
 
 def fetch_realtime_feed(selected_line):
-    """Download and decode the live feed for a selected subway line."""
+# Download and decode the live feed for a selected subway line
 
     if selected_line not in LINE_OPTIONS:
         raise ValueError("Unsupported subway line.")
@@ -105,3 +105,34 @@ def fetch_realtime_feed(selected_line):
     feed.ParseFromString(response.content)
 
     return feed
+
+
+def extract_arrival_records(feed):
+# Convert the live feed into simple arrival dictionaries
+
+    arrival_records = []
+
+    for entity in feed.entity:
+        if not entity.HasField("trip_update"):
+            continue
+
+        trip_update = entity.trip_update
+        route_id = trip_update.trip.route_id
+
+        for stop_update in trip_update.stop_time_update:
+            arrival_time = stop_update.arrival.time
+
+            if arrival_time == 0:
+                arrival_time = stop_update.departure.time
+
+            if arrival_time == 0:
+                continue
+
+            arrival_records.append({
+                "route_id": route_id,
+                "stop_id": stop_update.stop_id,
+                "arrival_timestamp": arrival_time
+            })
+
+    return arrival_records
+    
