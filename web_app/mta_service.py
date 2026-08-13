@@ -5,6 +5,7 @@ import zipfile
 
 import pandas as pd
 import requests
+from google.transit import gtfs_realtime_pb2
 
 from web_app.config import LINE_OPTIONS, STATIC_GTFS_URL
 
@@ -88,3 +89,19 @@ def get_stations_for_line(selected_line):
 
     return stations
 
+
+def fetch_realtime_feed(selected_line):
+    """Download and decode the live feed for a selected subway line."""
+
+    if selected_line not in LINE_OPTIONS:
+        raise ValueError("Unsupported subway line.")
+
+    feed_url = LINE_OPTIONS[selected_line]["feed_url"]
+
+    response = requests.get(feed_url, timeout=30)
+    response.raise_for_status()
+
+    feed = gtfs_realtime_pb2.FeedMessage()
+    feed.ParseFromString(response.content)
+
+    return feed
