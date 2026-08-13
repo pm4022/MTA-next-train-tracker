@@ -1,7 +1,11 @@
 # Functions for retrieving and processing MTA subway data
 
 import io
+import math
+import time
 import zipfile
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -135,4 +139,60 @@ def extract_arrival_records(feed):
             })
 
     return arrival_records
-    
+
+
+def filter_arrivals(
+    records,
+    selected_line,
+    station_id,
+    direction,
+    current_timestamp=None
+):
+# Filter, format, and return the next three matching trains
+
+    if selected_line not in LINE_OPTIONS:
+        raise ValueError("Unsupported subway line.")
+
+    if direction not in ("N", "S"):
+        raise ValueError("Direction must be N or S.")
+
+    if current_timestamp is None:
+        current_timestamp = time.time()
+
+    route_ids = LINE_OPTIONS[selected_line]["route_ids"]
+    selected_stop_id = f"{station_id}{direction}"
+    upcoming_arrivals = []
+
+    for record in records:
+        if record["route_id"] not in route_ids:
+            continue
+
+        if record["stop_id"] != selected_stop_id:
+            continue
+
+        if record["arrival_timestamp"] <= current_timestamp:
+            continue
+
+        minutes_away = math.ceil(
+            (record["arrival_timestamp"] - current_timestamp) / 60
+        )
+
+        arrival_time = datetime.fromtimestamp(
+            record["arrival_timestamp"],
+            ZoneInfo("America/New_York")
+        ).strftime("%I:%M %p").lstrip("0")
+
+        upcoming_arrivals.append({
+            "line": selected_line,
+            "station_id": station_id,
+            "direction": direction,
+            "expected_arrival": arrival_time,
+            "minutes_away": minutes_away,
+            "arrival_timestamp": record["arrival_timestamp"]
+        })
+
+    upcoming_arrivals.sort(
+        key=lambda arrival: arrival["arrival_timestamp"]
+    )
+
+    return upcoming_arrivals[:3]
