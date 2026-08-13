@@ -196,3 +196,17 @@ def filter_arrivals(
     )
 
     return upcoming_arrivals[:3]
+
+
+def get_next_arrivals(selected_line, station_id, direction):
+# Connect all live arrival functions into one function
+
+    feed = fetch_realtime_feed(selected_line)
+    records = extract_arrival_records(feed)
+
+    return filter_arrivals(
+        records,
+        selected_line,
+        station_id,
+        direction
+    )
