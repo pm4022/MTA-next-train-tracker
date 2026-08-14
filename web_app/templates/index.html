@@ -1,0 +1,127 @@
+{% extends "bootstrap_5_layout.html" %}
+{% set page_title = "MTA Next Train Tracker" %}
+{% set active_page = "home" %}
+
+{% block head %}
+    <!-- ONLY AUTO-REFRESH ONCE THERE ARE RESULTS WORTH REFRESHING -->
+    {% if arrivals|length > 0 %}
+        <meta http-equiv="refresh" content="60">
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="h3 mb-1">Next Train Tracker</h1>
+    <p class="text-muted">Choose a subway line, station, and direction to see the next three arrivals.</p>
+
+    {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+
+    <!-- SELECTION FORM -->
+    <div class="card tracker-card mb-4">
+        <div class="card-body">
+            <form method="GET" action="/">
+
+                <div class="mb-3">
+                    <label for="line" class="form-label fw-semibold">Subway Line</label>
+                    <select id="line" name="line" class="form-select"
+                            onchange="window.location.href = '/?line=' + encodeURIComponent(this.value)">
+                        <option value="">-- Select a line --</option>
+                        {% for line in lines %}
+                            <option value="{{ line }}" {% if line == selected_line %}selected{% endif %}>{{ line }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if stations|length > 0 %}
+
+                    <div class="mb-3">
+                        <label for="station_id" class="form-label fw-semibold">Station</label>
+                        <select id="station_id" name="station_id" class="form-select">
+                            {% for station in stations %}
+                                <option value="{{ station.station_id }}"
+                                    {% if station.station_id == selected_station_id %}selected{% endif %}>
+                                    {{ station.stop_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="direction" class="form-label fw-semibold">Direction</label>
+                        <select id="direction" name="direction" class="form-select">
+                            <option value="N" {% if selected_direction == "N" %}selected{% endif %}>Northbound (N)</option>
+                            <option value="S" {% if selected_direction == "S" %}selected{% endif %}>Southbound (S)</option>
+                        </select>
+                        <div class="form-text">
+                            The MTA labels every platform N or S, even on crosstown lines where the
+                            train does not literally travel north or south.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Show next trains</button>
+
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+
+    <!-- RESULTS -->
+    {% if arrivals|length > 0 %}
+
+        {% set matched_stations = stations | selectattr("station_id", "equalto", selected_station_id) | list %}
+        {% if matched_stations|length > 0 %}
+            {% set station_name = matched_stations[0].stop_name %}
+        {% else %}
+            {% set station_name = selected_station_id %}
+        {% endif %}
+
+        <h2 class="h5 mb-3">
+            <span class="line-bullet">{{ selected_line }}</span>
+            &nbsp;{{ station_name }}
+            <small class="text-muted">
+                &middot; {% if selected_direction == "N" %}Northbound{% else %}Southbound{% endif %}
+            </small>
+        </h2>
+
+        <div class="card tracker-card">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Train</th>
+                        <th scope="col">Expected Arrival</th>
+                        <th scope="col" class="text-end">Minutes Away</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for arrival in arrivals %}
+                        <tr>
+                            <td><span class="line-bullet">{{ arrival.line }}</span></td>
+                            <td class="align-middle">{{ arrival.expected_arrival }}</td>
+                            <td class="align-middle text-end">
+                                <span class="minutes-value">{{ arrival.minutes_away }}</span>
+                                <div class="minutes-label">min</div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-muted small mt-2">
+            <i class="bi-arrow-clockwise"></i>
+            This page refreshes automatically every 60 seconds.
+        </p>
+
+    {% elif selected_line and selected_station_id and selected_direction and not error_message %}
+
+        <div class="alert alert-warning">
+            No upcoming trains were found for this platform. Try the other direction, or
+            check back later if service has ended for the night.
+        </div>
+
+    {% endif %}
+
+{% endblock %}
