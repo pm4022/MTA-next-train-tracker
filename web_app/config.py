@@ -1,5 +1,8 @@
 # Configuration data for the MTA Next Train Tracker
 
+# Value used by the dropdowns when the rider does not want to filter
+ALL_OPTION = "All"
+
 BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds"
 STATIC_GTFS_URL = "https://rrgtfsfeeds.s3.amazonaws.com/gtfs_subway.zip"
 

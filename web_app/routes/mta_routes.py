@@ -1,39 +1,49 @@
 from flask import Blueprint, render_template, request
 
-from web_app.config import LINE_OPTIONS
-from web_app.mta_service import get_stations_for_line, get_next_arrivals
+from web_app.config import ALL_OPTION
+from web_app.mta_service import (
+    find_station,
+    get_station_arrivals,
+    load_station_table
+)
 
 mta_routes = Blueprint("mta_routes", __name__)
 
 
 @mta_routes.route("/", methods=["GET"])
 def index():
-    selected_line = request.args.get("line")
     selected_station_id = request.args.get("station_id")
+    selected_line = request.args.get("line")
     selected_direction = request.args.get("direction")
 
-    stations = []
+    stations = load_station_table()
+    station = None
     arrivals = []
     error_message = None
 
-    if selected_line:
-        stations = get_stations_for_line(selected_line)
+    if selected_station_id:
+        station = find_station(selected_station_id)
 
-        if selected_station_id and selected_direction:
+        if station is None:
+            error_message = "Unsupported station."
+        else:
             try:
-                arrivals = get_next_arrivals(
-                    selected_line, selected_station_id, selected_direction
+                arrivals = get_station_arrivals(
+                    selected_station_id,
+                    selected_line,
+                    selected_direction
                 )
             except ValueError as e:
                 error_message = str(e)
 
     return render_template(
         "index.html",
-        lines=LINE_OPTIONS.keys(),
-        selected_line=selected_line,
-        selected_station_id=selected_station_id,
-        selected_direction=selected_direction,
+        all_option=ALL_OPTION,
         stations=stations,
+        station=station,
+        selected_station_id=selected_station_id,
+        selected_line=selected_line,
+        selected_direction=selected_direction,
         arrivals=arrivals,
         error_message=error_message,
     )
