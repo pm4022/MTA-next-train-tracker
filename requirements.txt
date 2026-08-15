@@ -1,5 +1,5 @@
-Flask
-pandas
-requests
-gtfs-realtime-bindings
-pytest
+Flask==3.1.2
+  pandas 
+  requests
+  gtfs-realtime-bindings
+  pytest
