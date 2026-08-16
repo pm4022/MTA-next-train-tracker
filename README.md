@@ -23,16 +23,23 @@ FLASK_APP=web_app flask run
 
 ## Project Structure
 
+The app serves two versions of the same tracker. The plain page is at `/` and a
+styled, dark "departure board" version is at `/board`. Both read the same data.
+
 ```
 web_app/
   __init__.py                    # starts up the Flask app
   config.py                      # which feed and route ids belong to each line
   mta_service.py                 # gets the MTA data and pulls out the arrivals
+  line_colors.py                 # line bullet colours, read from the MTA data
   routes/
-    mta_routes.py                # runs the page and calls mta_service
+    mta_routes.py                # runs the plain page at /
+    board_routes.py              # runs the styled board page at /board
   templates/
-    bootstrap_5_layout.html      # shared page layout
-    index.html                   # the tracker page itself
+    bootstrap_5_layout.html      # shared page layout for the plain page
+    index.html                   # the plain tracker page
+    board_layout.html            # dark page layout for the board page
+    board.html                   # the styled board page
 ```
 
 ## Attribution

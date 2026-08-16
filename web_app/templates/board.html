@@ -1,0 +1,183 @@
+{#
+    FRONT-END ONLY
+
+    The styled board page. Same content as the plain index.html page, with the
+    dropdowns collapsible and the results shown as a framed departure board.
+#}
+{% extends "board_layout.html" %}
+{% set page_title = "MTA Next Train Tracker" %}
+
+{% block head %}
+    {% if arrivals|length > 0 %}
+        <meta http-equiv="refresh" content="60">
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{#
+    Everything on the page sits in one centred column, so the title lines up
+    with the left edge of the boxes underneath it.
+#}
+<div class="board-column">
+
+    <h1 class="pixel neon-title mb-4">Next Train Tracker</h1>
+
+    {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+
+    {#
+        The panel starts closed once there are arrivals to look at, so the
+        board is what you see first. Because that is decided here on the
+        server, it survives the 60 second refresh.
+    #}
+    {% if arrivals|length > 0 %}
+        {% set panel_open = false %}
+    {% else %}
+        {% set panel_open = true %}
+    {% endif %}
+
+    <button class="options-toggle pixel mb-3" type="button"
+            data-bs-toggle="collapse" data-bs-target="#optionsPanel"
+            aria-controls="optionsPanel"
+            aria-expanded="{% if panel_open %}true{% else %}false{% endif %}">
+        <span class="when-collapsed">Change station &#9662;</span>
+        <span class="when-expanded">Hide options &#9652;</span>
+    </button>
+
+    <div class="collapse {% if panel_open %}show{% endif %}" id="optionsPanel">
+        <div class="board-panel mb-4">
+            <div class="p-3">
+                <form method="GET" action="/board">
+
+                    <div class="mb-3">
+                        <label for="station_id" class="form-label fw-semibold">Station</label>
+                        <select id="station_id" name="station_id" class="form-select"
+                                onchange="window.location.href = '/board?station_id=' + encodeURIComponent(this.value)">
+                            <option value="">-- Select a station --</option>
+                            {% for one_station in stations %}
+                                <option value="{{ one_station.station_id }}"
+                                    {% if one_station.station_id == selected_station_id %}selected{% endif %}>
+                                    {{ one_station.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {% if station %}
+
+                        <div class="mb-3">
+                            <label for="line" class="form-label fw-semibold">Line</label>
+                            <select id="line" name="line" class="form-select">
+                                <option value="{{ all_option }}"
+                                    {% if not selected_line or selected_line == all_option %}selected{% endif %}>
+                                    {{ all_option }} lines
+                                </option>
+                                {% for line in station.lines %}
+                                    <option value="{{ line }}"
+                                        {% if line == selected_line %}selected{% endif %}>{{ line }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="direction" class="form-label fw-semibold">Direction</label>
+                            <select id="direction" name="direction" class="form-select">
+                                <option value="{{ all_option }}"
+                                    {% if not selected_direction or selected_direction == all_option %}selected{% endif %}>
+                                    {{ all_option }} directions
+                                </option>
+                                <option value="N" {% if selected_direction == "N" %}selected{% endif %}>Northbound (N)</option>
+                                <option value="S" {% if selected_direction == "S" %}selected{% endif %}>Southbound (S)</option>
+                            </select>
+                            <div class="form-text">
+                                The MTA labels every platform N or S, even on crosstown lines where the
+                                train does not literally travel north or south.
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-board">Show next trains</button>
+
+                    {% endif %}
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if arrivals|length > 0 %}
+
+        <div class="board-frame">
+            <div class="board-heading">
+                {{ station.stop_name }}
+                <span class="board-filters">
+                    &middot;
+                    {% if selected_line and selected_line != all_option %}
+                        {{ selected_line }} train
+                    {% else %}
+                        all lines
+                    {% endif %}
+                    &middot;
+                    {% if selected_direction == "N" %}
+                        Northbound
+                    {% elif selected_direction == "S" %}
+                        Southbound
+                    {% else %}
+                        both directions
+                    {% endif %}
+                </span>
+            </div>
+
+            <table class="board-table">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-start">Train</th>
+                        <th scope="col" class="text-start">Direction</th>
+                        <th scope="col" class="text-end">Arrival</th>
+                        <th scope="col" class="text-end">Minutes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for arrival in arrivals %}
+                        <tr>
+                            <td>
+                                <span class="line-bullet"
+                                      style="background-color: {{ arrival.colors.background }}; color: {{ arrival.colors.text }};">
+                                    {{ arrival.short_code }}
+                                </span>
+                                {% if arrival.name_detail %}
+                                    <div class="line-detail">{{ arrival.name_detail }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="direction-cell">
+                                {% if arrival.direction == "N" %}Northbound{% else %}Southbound{% endif %}
+                            </td>
+                            <td class="arrival-time text-end">{{ arrival.expected_arrival }}</td>
+                            <td class="text-end">
+                                <span class="minutes-value">{{ arrival.minutes_away }}</span>
+                                <div class="minutes-label">min</div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p class="small mt-2" style="color: var(--board-muted);">
+            <i class="bi-arrow-clockwise"></i>
+            This page refreshes automatically every 60 seconds.
+        </p>
+
+    {% elif searched and not error_message %}
+
+        <div class="alert alert-warning">
+            No upcoming trains were found for this station. Try a different line or
+            direction, or check back later if service has ended for the night.
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

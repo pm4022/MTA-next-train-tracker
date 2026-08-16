@@ -3,6 +3,10 @@
 # Value used by the dropdowns when the rider does not want to filter
 ALL_OPTION = "All"
 
+# Used for the line bullets when the MTA feed does not give a colour
+DEFAULT_LINE_COLOR = "#808183"
+DEFAULT_LINE_TEXT_COLOR = "#ffffff"
+
 BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds"
 STATIC_GTFS_URL = "https://rrgtfsfeeds.s3.amazonaws.com/gtfs_subway.zip"
 
