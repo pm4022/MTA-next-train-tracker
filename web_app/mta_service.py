@@ -48,10 +48,16 @@ def load_static_gtfs():
             dtype=str
         )
 
+        routes = pd.read_csv(
+            gtfs_zip.open("routes.txt"),
+            dtype=str
+        )
+
         static_gtfs_tables = {
             "trips": trips,
             "stop_times": stop_times,
-            "stops": stops
+            "stops": stops,
+            "routes": routes
         }
 
     return static_gtfs_tables

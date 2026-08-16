@@ -1,0 +1,313 @@
+{#
+    FRONT-END ONLY
+
+    Dark, MTA-styled layout used by the board page. This is a separate layout
+    from bootstrap_5_layout.html so the plain page is left completely alone.
+#}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% set default_title = "MTA Next Train Tracker" -%}
+    {% set page_title = page_title|default(default_title) -%}
+    <title>{{ page_title }}</title>
+
+    <!-- LOAD BOOTSTRAP CSS (same version as the plain page) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    <!-- LOAD BOOTSTRAP ICONS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <!-- LOAD THE PIXEL / LED FONT (falls back to monospace if unreachable) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+
+    <style>
+        /*
+            COLOUR PALETTE
+            Bootstrap 5.0 has no built in dark mode, so the dark styling below
+            is written by hand on top of it.
+        */
+        :root {
+            --board-bg: #0d0d0f;
+            --board-panel: #16161a;
+            --board-border: #2f2f37;
+            --board-text: #e8e6e3;
+            --board-muted: #8b8b93;
+            --board-amber: #ffb000;
+            /* Both the options box and the results board use this width */
+            --board-width: 560px;
+        }
+
+        /* Keeps a block the same width as the board and centred on the page */
+        .board-column {
+            max-width: var(--board-width);
+            margin: 0 auto;
+        }
+
+        /* LED / pixel typeface, used for headings and the arrival numbers */
+        .pixel {
+            font-family: "VT323", ui-monospace, "Courier New", monospace;
+            letter-spacing: 0.02em;
+        }
+
+        body {
+            background-color: var(--board-bg);
+            color: var(--board-text);
+        }
+
+        a {
+            color: var(--board-amber);
+        }
+
+        /* THE NEON TITLE */
+        .neon-title {
+            font-size: 3rem;
+            line-height: 1;
+            color: var(--board-amber);
+            text-shadow:
+                0 0 4px rgba(255, 176, 0, 0.9),
+                0 0 12px rgba(255, 176, 0, 0.6),
+                0 0 28px rgba(255, 176, 0, 0.35);
+        }
+
+        /* THE OPTIONS PANEL */
+        .board-panel {
+            background-color: var(--board-panel);
+            border: 1px solid var(--board-border);
+            border-radius: 6px;
+        }
+
+        .options-toggle {
+            background: none;
+            border: 1px solid var(--board-border);
+            border-radius: 4px;
+            color: var(--board-text);
+            padding: 6px 12px;
+        }
+
+        .options-toggle:hover {
+            border-color: var(--board-amber);
+            color: var(--board-amber);
+        }
+
+        /* The toggle wording flips depending on whether the panel is open */
+        .options-toggle .when-expanded {
+            display: none;
+        }
+
+        .options-toggle[aria-expanded="true"] .when-collapsed {
+            display: none;
+        }
+
+        .options-toggle[aria-expanded="true"] .when-expanded {
+            display: inline;
+        }
+
+        /* FORM CONTROLS: Bootstrap draws these light, so darken them */
+        .form-label {
+            color: var(--board-text);
+        }
+
+        .form-text {
+            color: var(--board-muted);
+        }
+
+        .form-select {
+            background-color: #0f0f12;
+            border-color: var(--board-border);
+            color: var(--board-text);
+        }
+
+        .form-select:focus {
+            background-color: #0f0f12;
+            border-color: var(--board-amber);
+            box-shadow: 0 0 0 0.2rem rgba(255, 176, 0, 0.2);
+            color: var(--board-text);
+        }
+
+        .form-select option {
+            background-color: #0f0f12;
+            color: var(--board-text);
+        }
+
+        .btn-board {
+            background-color: var(--board-amber);
+            border: none;
+            color: #1a1200;
+            font-weight: 700;
+        }
+
+        .btn-board:hover {
+            background-color: #ffc333;
+            color: #1a1200;
+        }
+
+        /* THE DEPARTURE BOARD: bordered box, centred on the page */
+        /* Everything inside the board uses the pixel font */
+        .board-frame {
+            max-width: var(--board-width);
+            margin: 0 auto;
+            background-color: #000;
+            border: 2px solid var(--board-border);
+            border-radius: 6px;
+            overflow: hidden;
+            font-family: "VT323", ui-monospace, "Courier New", monospace;
+            letter-spacing: 0.02em;
+        }
+
+        .board-heading {
+            border-bottom: 1px solid var(--board-border);
+            padding: 12px 16px;
+            font-size: 1.4rem;
+            color: var(--board-text);
+        }
+
+        .board-heading .board-filters {
+            color: var(--board-muted);
+        }
+
+        .board-table {
+            width: 100%;
+            margin: 0;
+            border-collapse: collapse;
+            /* Fixed layout so the four columns stay evenly spaced */
+            table-layout: fixed;
+        }
+
+        .board-table th {
+            width: 25%;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--board-border);
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--board-muted);
+            text-transform: uppercase;
+        }
+
+        .board-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1e1e24;
+            color: var(--board-text);
+            vertical-align: middle;
+            font-size: 1.2rem;
+        }
+
+        .board-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .board-table .arrival-time {
+            font-size: 1.5rem;
+        }
+
+        /* The direction is set to match the board heading size */
+        .board-table .direction-cell {
+            font-size: 1.4rem;
+        }
+
+        /* The minutes away reads as the live countdown, so it glows */
+        .minutes-value {
+            font-size: 2rem;
+            line-height: 1;
+            color: var(--board-amber);
+            text-shadow: 0 0 8px rgba(255, 176, 0, 0.5);
+        }
+
+        .minutes-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--board-muted);
+        }
+
+        /* LINE BULLETS: flat circles, coloured from the MTA feed */
+        .line-bullet {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 6px;
+            border-radius: 999px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .line-detail {
+            color: var(--board-muted);
+            font-size: 0.95rem;
+        }
+
+        /* ALERTS: Bootstrap's are light, so restyle them for the dark page */
+        .alert-danger {
+            background-color: #2a0f12;
+            border-color: #7d2530;
+            color: #f3b8bf;
+        }
+
+        .alert-warning {
+            background-color: #2a220f;
+            border-color: #7d6725;
+            color: #f0dca8;
+        }
+
+        footer {
+            color: var(--board-muted);
+        }
+
+        footer hr {
+            border-color: var(--board-border);
+        }
+
+        /* On narrow screens let the board use the full width */
+        @media (max-width: 575px) {
+            .board-frame,
+            .board-column {
+                max-width: 100%;
+            }
+
+            .neon-title {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+
+    {% block head %}
+    {% endblock %}
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="margin-bottom:0;">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                {{ message }}
+            </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="container" style="margin-top:2em;">
+        <div id="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+        <footer style="margin-top:3em; margin-bottom:2em;">
+            <hr>
+            <p class="small">
+                Live arrival data from the
+                <a href="https://api.mta.info/">MTA GTFS-Realtime feeds</a>.
+                Structure adapted from the
+                <a href="https://github.com/prof-rossetti/flask-sheets-template-2024">Flask Sheets Template 2024</a>.
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js" integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf" crossorigin="anonymous"></script>
+
+    {% block js_foot %}
+    {% endblock %}
+</body>
+</html>
